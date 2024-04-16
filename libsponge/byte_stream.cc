@@ -20,7 +20,7 @@ using namespace std;
 ByteStream::ByteStream(const size_t capacity) : buffer(""),buffer_max_size(capacity),write_count(0),read_count(0){}
 
 size_t ByteStream::write(const string &data) {
-    size_t write_in_count = min(buffer_max_size,data.length());
+    size_t write_in_count = min(remaining_capacity(),data.length());        // need to consider the case of overwritting
     size_t origin_pos = 0;
     buffer += data.substr(origin_pos,write_in_count);
     origin_pos = write_in_count;
@@ -37,6 +37,7 @@ string ByteStream::peek_output(const size_t len) const {
 //! \param[in] len bytes will be removed from the output side of the buffer
 void ByteStream::pop_output(const size_t len) {
     buffer = buffer.substr(len);
+    read_count += len;          // pop equs output
 }
 
 //! Read (i.e., copy and then pop) the next "len" bytes of the stream
@@ -44,7 +45,6 @@ void ByteStream::pop_output(const size_t len) {
 //! \returns a string
 std::string ByteStream::read(const size_t len) {
     std::string read_content = peek_output(len);
-    read_count += len;
     pop_output(len);
     return read_content;
 }
@@ -65,7 +65,7 @@ bool ByteStream::buffer_empty() const {
 }
 
 bool ByteStream::eof() const {
-    if(write_count == read_count){
+    if(end_sign and read_count == write_count and buffer_empty()){
         return true;
     }
     return false;
